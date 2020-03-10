@@ -9,7 +9,9 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"path"
+	"strings"
 )
 
 type Status struct {
@@ -88,17 +90,32 @@ func uploadImage(imageURL string, instanceUrl string, authToken string) string {
 
 }
 
-func PostStatus(status Status, instanceURL string, authToken string) {
-	mediaID := uploadImage(status.ImageURL, instanceURL, authToken)
+func createStatus(instanceURL, authToken, mediaID string, status Status) {
+	statusText := status.Caption +
+		"\nSource: " + status.SourceName + " " + status.SourceURL +
+		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
+	params := url.Values{}
+	params.Add("media_ids[]", mediaID)
+	params.Add("status", statusText)
+	params.Add("visibility", "unlisted")
+	postData := strings.NewReader(params.Encode())
 
-	fmt.Println(mediaID)
-	// fmt.Println(status.ImageURL)
-	// fmt.Println(status.Caption)
-	// fmt.Println(status.SourceName + " " + status.SourceURL)
-	// fmt.Println(status.RebloggedName + " " + status.RebloggedURL)
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", instanceURL+"/api/v1/statuses", postData)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Authorization", "bearer "+authToken)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
 }
 
-// img
-// text
-// source
-// reblogged from
+func PostStatus(status Status, instanceURL string, authToken string) {
+	mediaID := uploadImage(status.ImageURL, instanceURL, authToken)
+	createStatus(instanceURL, authToken, mediaID, status)
+}
