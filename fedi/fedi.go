@@ -91,8 +91,8 @@ func uploadImage(imageURL string, instanceUrl string, authToken string) string {
 }
 
 func createStatus(instanceURL, authToken, mediaID string, status Status) {
-	statusText := status.Caption +
-		"\nSource: " + status.SourceName + " " + status.SourceURL +
+	statusText := "\"" + status.Caption + "\"" +
+		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
 		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
 	params := url.Values{}
 	params.Add("media_ids[]", mediaID)
