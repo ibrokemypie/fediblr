@@ -1,4 +1,4 @@
-package fedi
+package config
 
 import (
 	"encoding/json"

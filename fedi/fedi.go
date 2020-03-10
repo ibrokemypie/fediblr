@@ -10,8 +10,11 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
+
+	"github.com/ibrokemypie/fediblr/config"
 )
 
 type Status struct {
@@ -45,18 +48,26 @@ func newfileUploadRequest(uri string, params map[string]string, paramName string
 	return req, err
 }
 
-func uploadImage(imageURL string, instanceUrl string, authToken string) string {
+func uploadImage(configuration map[string]string, imageURL string) string {
+	if configuration["lastImage"] != path.Base(imageURL) {
+		configuration["lastImage"] = path.Base(imageURL)
+		config.WriteConfig(configuration)
+	} else {
+		fmt.Println("Already posted this image before, skipping.")
+		os.Exit(1)
+	}
+
 	resp, err := http.Get(imageURL)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
 
-	req, err := newfileUploadRequest(instanceUrl+"/api/v1/media", nil, "file", resp.Body, path.Base(imageURL))
+	req, err := newfileUploadRequest(configuration["fediInstance"]+"/api/v1/media", nil, "file", resp.Body, path.Base(imageURL))
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", "bearer "+authToken)
+	req.Header.Set("Authorization", "bearer "+configuration["fediToken"])
 
 	client := &http.Client{}
 	resp, err = client.Do(req)
@@ -87,25 +98,24 @@ func uploadImage(imageURL string, instanceUrl string, authToken string) string {
 	}
 
 	return result["id"].(string)
-
 }
 
-func createStatus(instanceURL, authToken, mediaID string, status Status, visibility string) {
-	statusText := "\"" + status.Caption + "\"" +
+func createStatus(configuration map[string]string, mediaID string, status Status) {
+	statusText := status.Caption +
 		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
 		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
 	params := url.Values{}
 	params.Add("media_ids[]", mediaID)
 	params.Add("status", statusText)
-	params.Add("visibility", visibility)
+	params.Add("visibility", configuration["visibility"])
 	postData := strings.NewReader(params.Encode())
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", instanceURL+"/api/v1/statuses", postData)
+	req, err := http.NewRequest("POST", configuration["fediInstance"]+"/api/v1/statuses", postData)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", "bearer "+authToken)
+	req.Header.Set("Authorization", "bearer "+configuration["fediToken"])
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(req)
@@ -115,7 +125,7 @@ func createStatus(instanceURL, authToken, mediaID string, status Status, visibil
 	defer resp.Body.Close()
 }
 
-func PostStatus(status Status, instanceURL string, authToken string, visibility string) {
-	mediaID := uploadImage(status.ImageURL, instanceURL, authToken)
-	createStatus(instanceURL, authToken, mediaID, status, visibility)
+func PostStatus(status Status, configuration map[string]string) {
+	mediaID := uploadImage(configuration, status.ImageURL)
+	createStatus(configuration, mediaID, status)
 }
