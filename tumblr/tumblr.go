@@ -27,6 +27,7 @@ type Post struct {
 	SourceLink    string  `json:"source_url"`
 	RebloggedName string  `json:"reblogged_from_name"`
 	RebloggedLink string  `json:"reblogged_from_url"`
+	Summary       string  `json:"summary"`
 }
 
 type Photo struct {
@@ -70,7 +71,7 @@ func GetPost(apiKey string, blogURL string) fedi.Status {
 
 	status := fedi.Status{
 		ImageURL:      post.Photos[0].Original.Link,
-		Caption:       post.Photos[0].Caption,
+		Caption:       post.Summary,
 		SourceName:    post.SourceName,
 		SourceURL:     post.SourceLink,
 		RebloggedName: post.RebloggedName,
