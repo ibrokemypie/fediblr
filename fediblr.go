@@ -36,9 +36,14 @@ func main() {
 		writeConfig(config)
 	}
 
+	if config["visibility"] == "" {
+		config["visibility"] = "unlisted"
+		writeConfig(config)
+	}
+
 	status := tumblr.GetPost(config["tumblrKey"], config["tumblrUser"])
 
-	fedi.PostStatus(status, config["fediInstance"], config["fediToken"])
+	fedi.PostStatus(status, config["fediInstance"], config["fediToken"], config["visibility"])
 }
 
 func writeConfig(config map[string]string) {

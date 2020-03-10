@@ -90,14 +90,14 @@ func uploadImage(imageURL string, instanceUrl string, authToken string) string {
 
 }
 
-func createStatus(instanceURL, authToken, mediaID string, status Status) {
+func createStatus(instanceURL, authToken, mediaID string, status Status, visibility string) {
 	statusText := "\"" + status.Caption + "\"" +
 		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
 		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
 	params := url.Values{}
 	params.Add("media_ids[]", mediaID)
 	params.Add("status", statusText)
-	params.Add("visibility", "unlisted")
+	params.Add("visibility", visibility)
 	postData := strings.NewReader(params.Encode())
 
 	client := &http.Client{}
@@ -115,7 +115,7 @@ func createStatus(instanceURL, authToken, mediaID string, status Status) {
 	defer resp.Body.Close()
 }
 
-func PostStatus(status Status, instanceURL string, authToken string) {
+func PostStatus(status Status, instanceURL string, authToken string, visibility string) {
 	mediaID := uploadImage(status.ImageURL, instanceURL, authToken)
-	createStatus(instanceURL, authToken, mediaID, status)
+	createStatus(instanceURL, authToken, mediaID, status, visibility)
 }
