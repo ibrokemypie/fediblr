@@ -25,7 +25,7 @@ func WriteConfig(config map[string]string) {
 }
 
 func GetConfig() map[string]string {
-	var config map[string]string
+	config := make(map[string]string)
 	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
 		fmt.Println(err)
 	}
