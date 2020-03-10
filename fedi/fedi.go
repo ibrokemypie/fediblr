@@ -18,7 +18,6 @@ import (
 )
 
 type Status struct {
-	ImageURL      string
 	Images        []string
 	Caption       string
 	SourceName    string

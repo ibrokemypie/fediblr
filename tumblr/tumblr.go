@@ -73,7 +73,6 @@ func GetPost(apiKey string, blogURL string) fedi.Status {
 		images = append(images, s.Original.Link)
 	}
 	status := fedi.Status{
-		ImageURL:      post.Photos[0].Original.Link,
 		Images:        images,
 		Caption:       post.Summary,
 		SourceName:    post.SourceName,
