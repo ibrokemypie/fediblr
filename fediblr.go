@@ -1,21 +1,59 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 
+	"github.com/BurntSushi/toml"
 	"github.com/ibrokemypie/fediblr/fedi"
 	"github.com/ibrokemypie/fediblr/tumblr"
 )
 
 func main() {
-	if len(os.Args) != 4 {
-		panic("Must have 3 arguments (api key, blog url and fedi isntance)")
+	var config map[string]string
+	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
+		fmt.Println(err)
 	}
-	apiKey := os.Args[1]
-	blogURL := os.Args[2]
-	instanceURL := os.Args[3]
 
-	status := tumblr.GetPost(apiKey, blogURL)
+	if config["tumblrKey"] == "" {
+		config["tumblrKey"] = tumblr.GetTumblrKey()
+		writeConfig(config)
+	}
 
-	fedi.PostStatus(status, instanceURL)
+	if config["tumblrUser"] == "" {
+		config["tumblrUser"] = tumblr.GetTumblrUser()
+		writeConfig(config)
+	}
+
+	if config["fediInstance"] == "" {
+		config["fediInstance"] = fedi.GetFediInstance()
+		writeConfig(config)
+	}
+
+	if config["fediToken"] == "" {
+		config["fediToken"] = fedi.GetFediAccessToken(config["fediInstance"])
+		writeConfig(config)
+	}
+
+	status := tumblr.GetPost(config["tumblrKey"], config["tumblrUser"])
+
+	fedi.PostStatus(status, config["fediInstance"], config["fediToken"])
+}
+
+func writeConfig(config map[string]string) {
+	f, err := os.Create("config.toml")
+	if err != nil {
+		// failed to create/open the file
+		log.Fatal(err)
+	}
+	if err := toml.NewEncoder(f).Encode(config); err != nil {
+		// failed to encode
+		log.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		// failed to close the file
+		log.Fatal(err)
+
+	}
 }
