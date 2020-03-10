@@ -19,6 +19,7 @@ import (
 
 type Status struct {
 	ImageURL      string
+	Images        []string
 	Caption       string
 	SourceName    string
 	SourceURL     string
@@ -100,12 +101,14 @@ func uploadImage(configuration map[string]string, imageURL string) string {
 	return result["id"].(string)
 }
 
-func createStatus(configuration map[string]string, mediaID string, status Status) {
+func createStatus(configuration map[string]string, mediaIDs []string, status Status) {
 	statusText := status.Caption +
 		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
 		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
 	params := url.Values{}
-	params.Add("media_ids[]", mediaID)
+	for _, id := range mediaIDs {
+		params.Add("media_ids[]", id)
+	}
 	params.Add("status", statusText)
 	params.Add("visibility", configuration["visibility"])
 	postData := strings.NewReader(params.Encode())
@@ -126,6 +129,9 @@ func createStatus(configuration map[string]string, mediaID string, status Status
 }
 
 func PostStatus(status Status, configuration map[string]string) {
-	mediaID := uploadImage(configuration, status.ImageURL)
-	createStatus(configuration, mediaID, status)
+	mediaIDs := []string{}
+	for _, image := range status.Images {
+		mediaIDs = append(mediaIDs, uploadImage(configuration, image))
+	}
+	createStatus(configuration, mediaIDs, status)
 }

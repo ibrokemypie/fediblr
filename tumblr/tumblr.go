@@ -62,15 +62,19 @@ func GetPost(apiKey string, blogURL string) fedi.Status {
 	}
 
 	var post Post
-	for i := 0; i <= len(result.Response.Posts); i++ {
-		if len(result.Response.Posts[i].Photos) > 0 {
-			post = result.Response.Posts[i]
+	for _, p := range result.Response.Posts {
+		if len(p.Photos) > 0 {
+			post = p
 			break
 		}
 	}
-
+	images := []string{}
+	for _, s := range post.Photos {
+		images = append(images, s.Original.Link)
+	}
 	status := fedi.Status{
 		ImageURL:      post.Photos[0].Original.Link,
+		Images:        images,
 		Caption:       post.Summary,
 		SourceName:    post.SourceName,
 		SourceURL:     post.SourceLink,
