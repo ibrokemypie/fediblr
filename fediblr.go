@@ -8,13 +8,14 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		panic("Must have 2 arguments (api key and blog url)")
+	if len(os.Args) != 4 {
+		panic("Must have 3 arguments (api key, blog url and fedi isntance)")
 	}
 	apiKey := os.Args[1]
 	blogURL := os.Args[2]
+	instanceURL := os.Args[3]
 
 	status := tumblr.GetPost(apiKey, blogURL)
 
-	fedi.PostStatus(status)
+	fedi.PostStatus(status, instanceURL)
 }
