@@ -2,8 +2,11 @@ package tumblr
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
+	"github.com/ibrokemypie/fediblr/config"
 	"github.com/ibrokemypie/fediblr/fedi"
 )
 
@@ -39,9 +42,9 @@ type Size struct {
 	Link string `json:"URL"`
 }
 
-func GetPost(apiKey string, blogURL string) fedi.Status {
-	baseURL := "https://api.tumblr.com/v2/blog/" + blogURL + "/posts/photo" +
-		"?api_key=" + apiKey + "&limit=10&reblog_info=true"
+func GetPost(configuration map[string]string) fedi.Status {
+	baseURL := "https://api.tumblr.com/v2/blog/" + configuration["tumblrUser"] + "/posts/photo" +
+		"?api_key=" + configuration["tumblrKey"] + "&limit=10&reblog_info=true"
 
 	resp, err := http.Get(baseURL)
 	if err != nil {
@@ -68,6 +71,15 @@ func GetPost(apiKey string, blogURL string) fedi.Status {
 			break
 		}
 	}
+
+	if configuration["lastImage"] != post.SourceLink {
+		configuration["lastImage"] = post.SourceLink
+		config.WriteConfig(configuration)
+	} else {
+		fmt.Println("Already posted this image before, skipping.")
+		os.Exit(1)
+	}
+
 	images := []string{}
 	for _, s := range post.Photos {
 		images = append(images, s.Original.Link)

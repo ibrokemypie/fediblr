@@ -10,11 +10,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
-
-	"github.com/ibrokemypie/fediblr/config"
 )
 
 type Status struct {
@@ -49,14 +46,6 @@ func newfileUploadRequest(uri string, params map[string]string, paramName string
 }
 
 func uploadImage(configuration map[string]string, imageURL string) string {
-	if configuration["lastImage"] != path.Base(imageURL) {
-		configuration["lastImage"] = path.Base(imageURL)
-		config.WriteConfig(configuration)
-	} else {
-		fmt.Println("Already posted this image before, skipping.")
-		os.Exit(1)
-	}
-
 	resp, err := http.Get(imageURL)
 	if err != nil {
 		panic(err)

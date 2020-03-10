@@ -9,7 +9,7 @@ import (
 func main() {
 	configuration := config.GetConfig()
 
-	status := tumblr.GetPost(configuration["tumblrKey"], configuration["tumblrUser"])
+	status := tumblr.GetPost(configuration)
 
 	fedi.PostStatus(status, configuration)
 }
