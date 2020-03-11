@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/ibrokemypie/fediblr/config"
 	"github.com/ibrokemypie/fediblr/fedi"
@@ -88,9 +90,23 @@ func GetPost(configuration map[string]string) fedi.Status {
 		Images:        images,
 		Caption:       post.Summary,
 		SourceName:    post.SourceName,
-		SourceURL:     post.SourceLink,
+		SourceURL:     removeRedirect(post.SourceLink),
 		RebloggedName: post.RebloggedName,
-		RebloggedURL:  post.RebloggedLink}
+		RebloggedURL:  removeRedirect(post.RebloggedLink)}
 
 	return status
+}
+
+func removeRedirect(urlString string) string {
+	if strings.HasPrefix(urlString, "https://t.umblr.com/redirect") {
+		urlString = strings.TrimPrefix(urlString, "https://t.umblr.com/redirect?z=")
+		urlString = strings.Split(urlString, "&t=")[0]
+		var err error
+		urlString, err = url.QueryUnescape(urlString)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return urlString
 }
