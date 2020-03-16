@@ -36,6 +36,7 @@ type Post struct {
 	RebloggedName string  `json:"reblogged_from_name"`
 	RebloggedLink string  `json:"reblogged_from_url"`
 	Summary       string  `json:"summary"`
+	Caption       string  `json:"caption"`
 	Body          string  `json:"body"`
 }
 
@@ -109,19 +110,6 @@ posts:
 		os.Exit(1)
 	}
 
-	post.Body = strings.Replace(post.Body, "<br>", "\n", -1)
-	if strings.Contains(post.Body, "img src=\"") {
-		images := strings.Split(post.Body, "img src=\"")
-		for _, v := range images {
-			if strings.HasPrefix(v, "http") {
-				newSize := Size{Link: strings.Split(v, "\"")[0]}
-				newPhoto := Photo{Original: newSize}
-				post.Photos = append(post.Photos, newPhoto)
-			}
-		}
-	}
-	caption := strip.StripTags(post.Body)
-
 	images := []string{}
 	for _, s := range post.Photos {
 		images = append(images, s.Original.Link)
@@ -129,7 +117,7 @@ posts:
 
 	status := fedi.Status{
 		Images:        images,
-		Caption:       caption,
+		Caption:       sanitizeCaption(post),
 		SourceName:    post.SourceName,
 		SourceURL:     removeRedirect(post.SourceLink),
 		RebloggedName: post.RebloggedName,
@@ -150,4 +138,27 @@ func removeRedirect(urlString string) string {
 	}
 
 	return urlString
+}
+
+func sanitizeCaption(post Post) string {
+	var caption string
+	if post.Body != "" {
+		caption = strings.Replace(post.Body, "<br>", "\n", -1)
+	} else if post.Caption != "" {
+		caption = strings.Replace(post.Caption, "<br>", "\n", -1)
+	} else {
+		return post.Summary
+	}
+
+	if strings.Contains(caption, "img src=\"") {
+		images := strings.Split(caption, "img src=\"")
+		for _, v := range images {
+			if strings.HasPrefix(v, "http") {
+				newSize := Size{Link: strings.Split(v, "\"")[0]}
+				newPhoto := Photo{Original: newSize}
+				post.Photos = append(post.Photos, newPhoto)
+			}
+		}
+	}
+	return strip.StripTags(caption)
 }
