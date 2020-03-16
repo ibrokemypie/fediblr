@@ -113,6 +113,8 @@ posts:
 		os.Exit(1)
 	}
 
+	post, caption := sanitizeCaption(post)
+
 	images := []string{}
 	for _, s := range post.Photos {
 		images = append(images, s.Original.Link)
@@ -120,7 +122,7 @@ posts:
 
 	status := fedi.Status{
 		Images:        images,
-		Caption:       sanitizeCaption(post),
+		Caption:       strip.StripTags(caption),
 		SourceName:    post.SourceName,
 		SourceURL:     removeRedirect(post.SourceLink),
 		RebloggedName: post.RebloggedName,
@@ -143,14 +145,14 @@ func removeRedirect(urlString string) string {
 	return urlString
 }
 
-func sanitizeCaption(post Post) string {
+func sanitizeCaption(post Post) (Post, string) {
 	var caption string
 	if post.Body != "" {
 		caption = strings.Replace(post.Body, "<br>", "\n", -1)
 	} else if post.Caption != "" {
 		caption = strings.Replace(post.Caption, "<br>", "\n", -1)
 	} else {
-		return post.Summary
+		return post, post.Summary
 	}
 
 	if strings.Contains(caption, "img src=\"") {
@@ -163,5 +165,6 @@ func sanitizeCaption(post Post) string {
 			}
 		}
 	}
-	return strip.StripTags(caption)
+
+	return post, strip.StripTags(caption)
 }
