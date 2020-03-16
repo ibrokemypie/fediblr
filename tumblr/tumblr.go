@@ -39,6 +39,7 @@ type Post struct {
 	Summary       string  `json:"summary"`
 	Caption       string  `json:"caption"`
 	Body          string  `json:"body"`
+	Title         string  `json:"title"`
 }
 
 type Photo struct {
@@ -146,13 +147,13 @@ func removeRedirect(urlString string) string {
 }
 
 func sanitizeCaption(post Post) (Post, string) {
-	var caption string
+	var caption = post.Title + "\n"
 	if post.Body != "" {
-		caption = post.Body
+		caption += post.Body
 	} else if post.Caption != "" {
-		caption = post.Caption
+		caption += post.Caption
 	} else {
-		return post, post.Summary
+		return post, caption + post.Summary
 	}
 
 	caption = strings.Replace(caption, "<br>", "\n", -1)
