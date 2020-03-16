@@ -70,6 +70,11 @@ func GetPost(configuration config.Config) fedi.Status {
 
 	var post Post
 
+	for i := len(result.Response.Posts)/2 - 1; i >= 0; i-- {
+		opp := len(result.Response.Posts) - 1 - i
+		result.Response.Posts[i], result.Response.Posts[opp] = result.Response.Posts[opp], result.Response.Posts[i]
+	}
+
 posts:
 	for _, p := range result.Response.Posts {
 		if len(configuration.LastId) > 0 {
