@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	strip "github.com/grokify/html-strip-tags-go"
@@ -64,11 +65,13 @@ func GetPost(configuration config.Config) fedi.Status {
 	json.NewDecoder(resp.Body).Decode(&result)
 
 	if result.Meta.ResponseStatus != 200 {
-		panic(result.Meta.Message)
+		fmt.Println("http failure, code: " + strconv.Itoa(result.Meta.ResponseStatus) + " message: " + result.Meta.Message)
+		os.Exit(1)
 	}
 
 	if len(result.Response.Posts) <= 0 {
-		panic(result.Response.Posts)
+		fmt.Println("no posts in the api response")
+		os.Exit(1)
 	}
 
 	var post Post
