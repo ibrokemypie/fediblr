@@ -92,14 +92,24 @@ func uploadImage(configuration config.Config, imageURL string) string {
 }
 
 func createStatus(configuration config.Config, mediaIDs []string, status Status) {
-	statusText := status.Caption +
-		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
-		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
+	statusBuilder := strings.Builder{}
+	if status.Caption != "" {
+		statusBuilder.WriteString(status.Caption + "\n\n")
+	}
+	if status.SourceName != "" {
+		statusBuilder.WriteString("Source: ")
+		statusBuilder.WriteString(status.SourceName + " " + status.SourceURL + "\n")
+	}
+	if status.RebloggedName != "" {
+		statusBuilder.WriteString("Reblogged From: ")
+		statusBuilder.WriteString(status.RebloggedName + " " + status.RebloggedURL)
+	}
+
 	params := url.Values{}
 	for _, id := range mediaIDs {
 		params.Add("media_ids[]", id)
 	}
-	params.Add("status", statusText)
+	params.Add("status", statusBuilder.String())
 	params.Add("visibility", configuration.Visibility)
 	postData := strings.NewReader(params.Encode())
 
