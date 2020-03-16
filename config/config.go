@@ -65,7 +65,7 @@ func GetConfig() Config {
 	}
 
 	if config.LastId == nil {
-		config.LastId = make([]int, 10, 10)
+		config.LastId = make([]int, 10)
 		WriteConfig(config)
 	}
 

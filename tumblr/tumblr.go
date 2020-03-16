@@ -87,7 +87,7 @@ posts:
 			}
 		}
 
-		if len(configuration.LastId) == 10 {
+		if len(configuration.LastId) >= 10 {
 			configuration.LastId = configuration.LastId[1:]
 		}
 		configuration.LastId = append(configuration.LastId, p.ID)
