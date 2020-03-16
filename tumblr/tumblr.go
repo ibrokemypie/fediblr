@@ -148,12 +148,15 @@ func removeRedirect(urlString string) string {
 func sanitizeCaption(post Post) (Post, string) {
 	var caption string
 	if post.Body != "" {
-		caption = strings.Replace(post.Body, "<br>", "\n", -1)
+		caption = post.Body
 	} else if post.Caption != "" {
-		caption = strings.Replace(post.Caption, "<br>", "\n", -1)
+		caption = post.Caption
 	} else {
 		return post, post.Summary
 	}
+
+	caption = strings.Replace(caption, "<br>", "\n", -1)
+	caption = strings.Replace(caption, "<p>", "\n", -1)
 
 	if strings.Contains(caption, "img src=\"") {
 		images := strings.Split(caption, "img src=\"")
