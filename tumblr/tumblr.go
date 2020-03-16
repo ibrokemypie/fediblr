@@ -2,8 +2,10 @@ package tumblr
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	strip "github.com/grokify/html-strip-tags-go"
@@ -103,7 +105,8 @@ posts:
 	}
 
 	if post.ID <= 0 {
-		panic("no post")
+		fmt.Println("No new posts")
+		os.Exit(1)
 	}
 
 	post.Body = strings.Replace(post.Body, "<br>", "\n", -1)
