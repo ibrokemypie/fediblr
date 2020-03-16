@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/ibrokemypie/fediblr/config"
 )
 
 type Status struct {
@@ -45,18 +47,18 @@ func newfileUploadRequest(uri string, params map[string]string, paramName string
 	return req, err
 }
 
-func uploadImage(configuration map[string]string, imageURL string) string {
+func uploadImage(configuration config.Config, imageURL string) string {
 	resp, err := http.Get(imageURL)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
 
-	req, err := newfileUploadRequest(configuration["fediInstance"]+"/api/v1/media", nil, "file", resp.Body, path.Base(imageURL))
+	req, err := newfileUploadRequest(configuration.FediInstance+"/api/v1/media", nil, "file", resp.Body, path.Base(imageURL))
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", "bearer "+configuration["fediToken"])
+	req.Header.Set("Authorization", "bearer "+configuration.FediToken)
 
 	client := &http.Client{}
 	resp, err = client.Do(req)
@@ -89,7 +91,7 @@ func uploadImage(configuration map[string]string, imageURL string) string {
 	return result["id"].(string)
 }
 
-func createStatus(configuration map[string]string, mediaIDs []string, status Status) {
+func createStatus(configuration config.Config, mediaIDs []string, status Status) {
 	statusText := status.Caption +
 		"\n\nSource: " + status.SourceName + " " + status.SourceURL +
 		"\nReblogged From: " + status.RebloggedName + " " + status.RebloggedURL
@@ -98,15 +100,15 @@ func createStatus(configuration map[string]string, mediaIDs []string, status Sta
 		params.Add("media_ids[]", id)
 	}
 	params.Add("status", statusText)
-	params.Add("visibility", configuration["visibility"])
+	params.Add("visibility", configuration.Visibility)
 	postData := strings.NewReader(params.Encode())
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", configuration["fediInstance"]+"/api/v1/statuses", postData)
+	req, err := http.NewRequest("POST", configuration.FediInstance+"/api/v1/statuses", postData)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", "bearer "+configuration["fediToken"])
+	req.Header.Set("Authorization", "bearer "+configuration.FediToken)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := client.Do(req)
@@ -116,7 +118,7 @@ func createStatus(configuration map[string]string, mediaIDs []string, status Sta
 	defer resp.Body.Close()
 }
 
-func PostStatus(status Status, configuration map[string]string) {
+func PostStatus(status Status, configuration config.Config) {
 	mediaIDs := []string{}
 	for _, image := range status.Images {
 		mediaIDs = append(mediaIDs, uploadImage(configuration, image))

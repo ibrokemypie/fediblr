@@ -8,7 +8,16 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-func WriteConfig(config map[string]string) {
+type Config struct {
+	FediInstance string
+	FediToken    string
+	LastId       []int
+	TumblrKey    string
+	TumblrUser   string
+	Visibility   string
+}
+
+func WriteConfig(config Config) {
 	f, err := os.Create("config.toml")
 	if err != nil {
 		// failed to create/open the file
@@ -24,34 +33,39 @@ func WriteConfig(config map[string]string) {
 	}
 }
 
-func GetConfig() map[string]string {
-	config := make(map[string]string)
+func GetConfig() Config {
+	config := Config{}
 	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
 		fmt.Println(err)
 	}
 
-	if config["tumblrKey"] == "" {
-		config["tumblrKey"] = GetTumblrKey()
+	if config.TumblrKey == "" {
+		config.TumblrKey = GetTumblrKey()
 		WriteConfig(config)
 	}
 
-	if config["tumblrUser"] == "" {
-		config["tumblrUser"] = GetTumblrUser()
+	if config.TumblrUser == "" {
+		config.TumblrUser = GetTumblrUser()
 		WriteConfig(config)
 	}
 
-	if config["fediInstance"] == "" {
-		config["fediInstance"] = GetFediInstance()
+	if config.FediInstance == "" {
+		config.FediInstance = GetFediInstance()
 		WriteConfig(config)
 	}
 
-	if config["fediToken"] == "" {
-		config["fediToken"] = GetFediAccessToken(config["fediInstance"])
+	if config.FediToken == "" {
+		config.FediToken = GetFediAccessToken(config.FediInstance)
 		WriteConfig(config)
 	}
 
-	if config["visibility"] == "" {
-		config["visibility"] = "unlisted"
+	if config.Visibility == "" {
+		config.Visibility = "unlisted"
+		WriteConfig(config)
+	}
+
+	if config.LastId == nil {
+		config.LastId = make([]int, 10, 10)
 		WriteConfig(config)
 	}
 

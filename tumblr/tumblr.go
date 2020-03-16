@@ -2,12 +2,11 @@ package tumblr
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
+	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/ibrokemypie/fediblr/config"
 	"github.com/ibrokemypie/fediblr/fedi"
 )
@@ -27,12 +26,15 @@ type Response struct {
 }
 
 type Post struct {
+	Type          string  `json:"type"`
+	ID            int     `json:"id"`
 	Photos        []Photo `json:"photos"`
 	SourceName    string  `json:"source_title"`
 	SourceLink    string  `json:"source_url"`
 	RebloggedName string  `json:"reblogged_from_name"`
 	RebloggedLink string  `json:"reblogged_from_url"`
 	Summary       string  `json:"summary"`
+	Body          string  `json:"body"`
 }
 
 type Photo struct {
@@ -44,9 +46,9 @@ type Size struct {
 	Link string `json:"URL"`
 }
 
-func GetPost(configuration map[string]string) fedi.Status {
-	baseURL := "https://api.tumblr.com/v2/blog/" + configuration["tumblrUser"] + "/posts/photo" +
-		"?api_key=" + configuration["tumblrKey"] + "&limit=10&reblog_info=true"
+func GetPost(configuration config.Config) fedi.Status {
+	baseURL := "https://api.tumblr.com/v2/blog/" + configuration.TumblrUser + "/posts" +
+		"?api_key=" + configuration.TumblrKey + "&limit=10&reblog_info=true"
 
 	resp, err := http.Get(baseURL)
 	if err != nil {
@@ -67,28 +69,59 @@ func GetPost(configuration map[string]string) fedi.Status {
 	}
 
 	var post Post
+
+posts:
 	for _, p := range result.Response.Posts {
-		if len(p.Photos) > 0 {
-			post = p
-			break
+		if len(configuration.LastId) > 0 {
+			for _, v := range configuration.LastId {
+				if p.ID == v {
+					continue posts
+				}
+			}
 		}
+
+		if len(configuration.LastId) == 10 {
+			configuration.LastId = configuration.LastId[1:]
+		}
+		configuration.LastId = append(configuration.LastId, p.ID)
+
+		config.WriteConfig(configuration)
+
+		if p.Type == "photo" {
+			if len(p.Photos) <= 0 {
+				continue
+			}
+		}
+
+		post = p
+		break
 	}
 
-	if configuration["lastImage"] != post.SourceLink {
-		configuration["lastImage"] = post.SourceLink
-		config.WriteConfig(configuration)
-	} else {
-		fmt.Println("Already posted this image before, skipping.")
-		os.Exit(1)
+	if post.ID <= 0 {
+		panic("no post")
 	}
+
+	post.Body = strings.Replace(post.Body, "<br>", "\n", -1)
+	if strings.Contains(post.Body, "img src=\"") {
+		images := strings.Split(post.Body, "img src=\"")
+		for _, v := range images {
+			if strings.HasPrefix(v, "http") {
+				newSize := Size{Link: strings.Split(v, "\"")[0]}
+				newPhoto := Photo{Original: newSize}
+				post.Photos = append(post.Photos, newPhoto)
+			}
+		}
+	}
+	caption := strip.StripTags(post.Body)
 
 	images := []string{}
 	for _, s := range post.Photos {
 		images = append(images, s.Original.Link)
 	}
+
 	status := fedi.Status{
 		Images:        images,
-		Caption:       post.Summary,
+		Caption:       caption,
 		SourceName:    post.SourceName,
 		SourceURL:     removeRedirect(post.SourceLink),
 		RebloggedName: post.RebloggedName,
